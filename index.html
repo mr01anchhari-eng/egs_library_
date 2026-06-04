@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mamun</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+        body { font-family: 'Hind Siliguri', sans-serif; background-color: #f6f8fd; }
+        .active-tab { background-color: #7c3aed !important; color: white !important; }
+        
+        /* সাবজেক্ট ফিল্টার বাটনের প্রফেশনাল অ্যাক্টিভ এবং নরমাল স্টাইল */
+        .sub-btn-normal {
+            background-color: #ffffff !important;
+            color: #4b5563 !important;
+            border-color: #e5e7eb !important;
+        }
+        .sub-btn-active {
+            background-color: #6d28d9 !important;
+            color: #ffffff !important;
+            border-color: #6d28d9 !important;
+        }
+        /* ব্যানার স্লাইডারের স্মuথ ট্রানজিশন ইফেক্ট */
+        .banner-slide {
+            transition: opacity 0.6s ease-in-out;
+        }
+        /* স্ক্রোলবার হাইড করার জন্য */
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="pb-12">
+
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+        <div class="container mx-auto px-4 py-4 flex flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-0 h-0 rounded-xl bg-purple-600 flex items-center justify-center text-white text-xl shadow-md shadow-purple-200">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-800">College</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-full sm:w-80 relative">
+                <input type="text" id="searchInput" oninput="filterNotes()" placeholder="নোট সার্চ করুন..." 
+                       class="w-full px-4 py-2 pl-10 rounded-xl border border-gray-200 focus:outline-none focus:border-purple-500 text-sm bg-gray-50">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-xs"></i>
+                </div>
+                <!-- নোটিশ বেল বাটন -->
+                <div class="relative">
+                    <button id="bellBtn" onclick="toggleNoticePanel()" class="relative w-10 h-10 rounded-full bg-purple-50 hover:bg-purple-100 flex items-center justify-center text-purple-600 transition shadow-sm">
+                        <i class="fa-solid fa-bell text-lg"></i>
+                        <span id="bellBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"></span>
+                    </button>
+                    <!-- নোটিশ ড্রপডাউন প্যানেল — ডানদিকে aligned -->
+                    <div id="noticePanel" class="hidden absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                        <div class="bg-purple-600 px-4 py-3 flex items-center justify-between">
+                            <span class="text-white font-bold text-sm"><i class="fa-solid fa-bell mr-2"></i>নোটিশ বোর্ড</span>
+                            <button onclick="toggleNoticePanel()" class="text-white/70 hover:text-white text-xs">বন্ধ করুন ✕</button>
+                        </div>
+                        <div id="noticeList" class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                            <p class="text-center text-gray-400 text-sm py-6">কোনো নোটিশ নেই</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 mt-6">
+        <div id="bannerContainer" class="relative bg-gradient-to-r from-purple-600 to-indigo-700 rounded-3xl overflow-hidden shadow-xl shadow-purple-100 min-h-[140px] sm:min-h-[200px] flex items-center">
+            <div id="defaultBanner" class="p-6 text-white flex flex-col justify-center w-full md:flex-row md:justify-between md:items-center gap-4">
+                <div>
+                    <span class="bg-purple-50/30 text-purple-100 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">নতুন আপডেট</span>
+                    <h2 class="text-2xl md:text-3xl font-bold mt-2 leading-snug">সকল সেমিস্টারের সাজেশান ও<br>নোট এখন এক জায়গায়</h2>
+                </div>
+                <div class="hidden md:block text-5xl opacity-20 pr-4"><i class="fa-solid fa-book-open-reader"></i></div>
+            </div>
+            
+            <div id="sliderWrapper" class="absolute inset-0 w-full h-full hidden"></div>
+            
+            <div id="sliderDots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10"></div>
+        </div>
+    </div>
+
+    <main class="container mx-auto px-4 mt-8">
+        <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fa-solid fa-layer-group text-purple-600 mr-1"></i> সেমিস্টার সিলেক্ট করুন</h3>
+        <div id="semesterTabs" class="flex gap-2 overflow-x-auto pb-3 scrollbar-none">
+            <button onclick="selectSemester('All')" id="tab-All" class="active-tab px-5 py-2.5 rounded-2xl bg-white border border-gray-200 text-gray-700 font-semibold text-sm shadow-sm transition whitespace-nowrap">সব সেমিস্টার</button>
+        </div>
+
+        <div id="subjectWrapper" class="mt-4 hidden">
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">বিষয় ফিল্টার</h4>
+            <div id="subjectFilters" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div id="loader" class="text-center py-20">
+            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-purple-600 border-t-transparent"></div>
+            <p class="text-sm text-gray-500 mt-2 font-medium">লাইব্রেরী লোড হচ্ছে...</p>
+        </div>
+
+        <div id="notesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"></div>
+
+        <div id="emptyState" class="hidden text-center py-20 bg-white rounded-2xl border border-gray-100 mt-6">
+            <i class="fa-regular fa-folder-open text-4xl text-gray-300 mb-2"></i>
+            <p class="text-gray-500 text-sm">কোনো নোট পাওয়া যায়নি</p>
+        </div>
+    </main>
+
+    <div id="previewModal" class="fixed inset-0 bg-black/50 z-50 flex justify-end items-end sm:items-center hidden transition-opacity duration-300 opacity-0">
+        <div class="bg-white w-full sm:max-w-3xl h-[95vh] sm:h-[90vh] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden sm:mx-auto transition-transform duration-300 translate-y-full relative">
+            
+            <div class="bg-gray-900 p-4 text-white flex justify-between items-center border-b border-gray-800 pr-14 relative z-30">
+                <div class="w-full">
+                    <h2 id="modalTitle" class="text-base font-bold block truncate max-w-xs sm:max-w-xl leading-snug"></h2>
+                </div>
+                <button onclick="closePreview()" class="absolute right-3 top-2.5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer z-50" style="-webkit-tap-highlight-color: transparent;">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="bg-purple-50 border-b border-purple-100/50 px-4 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] font-medium text-purple-700">
+                <span id="modalSubjectBadge" class="bg-purple-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded inline-block shadow-sm"></span>
+                <div>কোড: <span id="modalPaperCode" class="font-bold text-purple-900"></span></div>
+                <div>সেমিস্টার: <span id="modalSemester" class="font-bold text-purple-900"></span></div>
+                <div>তারিখ: <span id="modalDate" class="font-bold text-purple-900"></span></div>
+            </div>
+
+            <div class="flex-1 bg-gray-100 flex flex-col overflow-hidden">
+                <div id="pdfContainer" class="w-full h-full hidden">
+                    <iframe id="modalPdfFrame" src="" class="w-full h-full border-0" allow="autoplay"></iframe>
+                </div>
+                <div id="textContainer" class="p-6 overflow-y-auto bg-white h-full space-y-4 hidden">
+                    <p id="modalShortDesc" class="hidden"></p>
+                    <div id="modalLongDesc" class="text-base text-gray-800 leading-relaxed whitespace-pre-line"></div>
+                </div>
+            </div>
+
+            <div class="p-3 bg-gray-50 border-t border-gray-100 flex gap-3">
+                <button id="modalShareBtn" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-md">
+                    <i class="fa-solid fa-share-nodes"></i> বন্ধুদের সাথে শেয়ার করুন
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ এখানে আপনার শেষ তৈরি করা Apps Script Deployment Web App URL-টি বসিয়ে দিন
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxT1fTXyaS0FtN0gqta9Rsb70VA2L9ieVT7ExQc4i9fLLmGx_E9NnZkLYKwQRknAsU3g/exec"; 
+
+        let notesData = [];
+        let bannerData = [];
+        let noticeData = [];
+        let currentSlideIndex = 0;
+        let slideTimer;
+        let selectedSemester = 'All';
+        let selectedSubject = 'All';
+
+        document.addEventListener("DOMContentLoaded", fetchNotesAndBanners);
+
+        // অবজেক্ট ডাটা (notes এবং banners) হ্যান্ডেল করার নতুন ফাংশন
+        async function fetchNotesAndBanners() {
+            try {
+                const res = await fetch(APPS_SCRIPT_URL);
+                const result = await res.json();
+                
+                // অ্যাপস স্ক্রিপ্টের অবজেক্ট ডাটা আলাদা করে ভ্যারিয়েবল এ রাখা হচ্ছে (যার কারণে ফাঁকা দেখাচ্ছিল)
+                notesData = result.notes || [];
+                bannerData = result.banners || [];
+                noticeData = result.notices || [];
+                renderNotices();
+                
+                document.getElementById('loader').classList.add('hidden');
+                
+                // গুগল শিটে ব্যানারের লিংক থাকলে স্লাইডার চালু হবে
+                if (bannerData.length > 0) {
+                    initBannerSlider();
+                }
+                
+                setupSemesterTabs();
+                renderNotes();
+                checkSharedLink();
+            } catch (err) {
+                console.error("ডাটা লোড ব্যর্থ হয়েছে:", err);
+                document.getElementById('loader').classList.add('hidden');
+            }
+        }
+
+        // অটো-স্লাইড ব্যানার তৈরি ও টাইমার সেট করার ফাংশন
+        function initBannerSlider() {
+            const defaultBanner = document.getElementById('defaultBanner');
+            const sliderWrapper = document.getElementById('sliderWrapper');
+            const sliderDots = document.getElementById('sliderDots');
+            
+            defaultBanner.classList.add('hidden');
+            sliderWrapper.classList.remove('hidden');
+            sliderWrapper.innerHTML = '';
+            sliderDots.innerHTML = '';
+            
+            bannerData.forEach((banner, index) => {
+                const slide = document.createElement('div');
+                slide.className = `banner-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${index === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}`;
+                
+                const img = document.createElement('img');
+                img.src = banner.Banner_URL;
+                img.className = "w-full h-full object-contain bg-[#112540] rounded-3xl cursor-pointer";
+
+
+                img.alt = `Banner ${index + 1}`;
+                
+                // ব্যানারে কোনো লিংক (Action_URL) দেওয়া থাকলে ক্লিক করলে নতুন ট্যাবে ওপেন হবে
+                if (banner.Action_URL && String(banner.Action_URL).trim() !== "") {
+                    img.onclick = () => window.open(banner.Action_URL, '_blank');
+                }
+                
+                slide.appendChild(img);
+                sliderWrapper.appendChild(slide);
+                
+                // ছোট ডট ইন্ডিকেটর তৈরি
+                const dot = document.createElement('button');
+                dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${index === 0 ? 'bg-white w-4' : 'bg-white/50'}`;
+                dot.onclick = () => changeSlide(index);
+                sliderDots.appendChild(dot);
+            });
+            
+            startSlideTimer();
+        }
+
+        function startSlideTimer() {
+            clearInterval(slideTimer);
+            slideTimer = setInterval(() => {
+                let nextIndex = (currentSlideIndex + 1) % bannerData.length;
+                changeSlide(nextIndex);
+            }, 5000); // প্রতি ৫ সেকেন্ড পর পর অটো স্লাইড হবে
+        }
+
+        function changeSlide(index) {
+            const slides = document.querySelectorAll('.banner-slide');
+            const dots = document.querySelectorAll('#sliderDots button');
+            if (slides.length === 0) return;
+            
+            slides[currentSlideIndex].classList.replace('opacity-100', 'opacity-0');
+            slides[currentSlideIndex].classList.replace('z-10', 'z-0');
+            dots[currentSlideIndex].classList.replace('bg-white', 'bg-white/50');
+            dots[currentSlideIndex].classList.remove('w-4');
+            
+            currentSlideIndex = index;
+            
+            slides[currentSlideIndex].classList.replace('opacity-0', 'opacity-100');
+            slides[currentSlideIndex].classList.replace('z-0', 'z-10');
+            dots[currentSlideIndex].classList.replace('bg-white/50', 'bg-white');
+            dots[currentSlideIndex].classList.add('w-4');
+            
+            startSlideTimer();
+        }
+
+        function setupSemesterTabs() {
+            const tabsContainer = document.getElementById('semesterTabs');
+            const semesters = [...new Set(notesData.map(item => item.Semester).filter(Boolean))];
+            semesters.forEach(sem => {
+                const btn = document.createElement('button');
+                btn.id = `tab-${sem}`;
+                btn.innerText = sem;
+                btn.className = "px-5 py-2.5 rounded-2xl bg-white border border-gray-200 text-gray-700 font-semibold text-sm shadow-sm transition whitespace-nowrap";
+                btn.onclick = () => selectSemester(sem);
+                tabsContainer.appendChild(btn);
+            });
+        }
+
+        function selectSemester(sem) {
+            selectedSemester = sem;
+            selectedSubject = 'All';
+            document.querySelectorAll('#semesterTabs button').forEach(b => b.classList.remove('active-tab'));
+            document.getElementById(`tab-${sem}`).classList.add('active-tab');
+
+            const subWrapper = document.getElementById('subjectWrapper');
+            const subFilters = document.getElementById('subjectFilters');
+            subFilters.innerHTML = '';
+
+            if (sem === 'All') {
+                subWrapper.classList.add('hidden');
+            } else {
+                subWrapper.classList.remove('hidden');
+                const subjects = [...new Set(notesData.filter(n => n.Semester === sem).map(n => n.Subject).filter(Boolean))];
+                
+                const allSubBtn = document.createElement('button');
+                allSubBtn.innerText = 'সব বিষয়';
+                allSubBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold border transition sub-btn-active";
+                allSubBtn.onclick = () => filterBySubject('All', allSubBtn);
+                subFilters.appendChild(allSubBtn);
+
+                subjects.forEach(sub => {
+                    const btn = document.createElement('button');
+                    btn.innerText = sub;
+                    btn.className = "px-3 py-1.5 rounded-xl text-xs font-bold border transition sub-btn-normal";
+                    btn.onclick = () => filterBySubject(sub, btn);
+                    subFilters.appendChild(btn);
+                });
+            }
+            renderNotes();
+        }
+
+        function filterBySubject(sub, btnElement) {
+            selectedSubject = sub;
+            document.querySelectorAll('#subjectFilters button').forEach(b => {
+                b.classList.remove('sub-btn-active');
+                b.classList.add('sub-btn-normal');
+            });
+            btnElement.classList.remove('sub-btn-normal');
+            btnElement.classList.add('sub-btn-active');
+            renderNotes();
+        }
+
+        function renderNotes() {
+            const grid = document.getElementById('notesGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            const searchInp = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = notesData.filter(note => {
+                const matchSem = selectedSemester === 'All' || note.Semester === selectedSemester;
+                const matchSub = selectedSubject === 'All' || note.Subject === selectedSubject;
+                const matchSearch = String(note.Title).toLowerCase().includes(searchInp) || String(note.ShortDesc).toLowerCase().includes(searchInp);
+                return matchSem && matchSub && matchSearch;
+            });
+
+            if(filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            filtered.forEach((note, noteIndex) => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group";
+                
+                let impBadge = '';
+                if (note.Important && String(note.Important).trim() !== "" && note.Important !== 'FALSE' && note.Important !== false) {
+                    impBadge = `<span class="bg-emerald-50 text-emerald-600 text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-emerald-100/60 shadow-xs">${note.Important}</span>`;
+                }
+                
+                let hasPdfIcon = note.Pdfurl ? `<i class="fa-regular fa-file-pdf text-red-500 mr-1"></i>` : `<i class="fa-regular fa-file-lines text-purple-600 mr-1"></i>`;
+                let memberHtml = (note.MemberCount && String(note.MemberCount).trim() !== "") ? `<div class="text-[11px] text-emerald-700 font-bold mb-2 bg-emerald-50 px-2.5 py-1 rounded-xl inline-flex items-center gap-1.5 border border-emerald-100/40"><i class="fa-solid fa-users text-[10px]"></i> সদস্য সংখ্যা: ${note.MemberCount}</div>` : '';
+                let dateHtml = note.date ? `<span class="text-[11px] text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-lg"><i class="fa-regular fa-calendar text-[10px] mr-1"></i>${note.date}</span>` : '';
+
+                const noteDataIndex = notesData.indexOf(note);
+                card.innerHTML = `
+                    <div>
+                        <h3 class="note-title-btn text-base font-bold text-gray-800 mb-2.5 cursor-pointer hover:text-purple-600 transition leading-snug">${note.Title}</h3>
+                        
+                        <div class="flex flex-wrap items-center gap-1.5 mb-3.5">
+                            <span class="bg-purple-50 text-purple-700 text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-purple-100/60">
+                                ${note.Subject}
+                            </span>
+                            <span class="bg-indigo-50 text-indigo-700 text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-indigo-100/60">
+                                ${note.PaperCode}
+                            </span>
+                            ${impBadge}
+                        </div>
+                        
+                        <p class="text-sm text-gray-600 mb-3 font-medium bg-gray-50/50 p-3 rounded-2xl border border-gray-100/70 leading-relaxed">${note.ShortDesc || 'কোনো বিবরণ নেই।'}</p>
+                        
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            ${memberHtml}
+                            ${dateHtml}
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-gray-100 flex gap-2">
+                        <button class="note-read-btn flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-1.5">
+                            ${hasPdfIcon} নোটটি পড়ুন
+                        </button>
+                        <button class="note-share-btn w-10 h-10 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-500 flex items-center justify-center text-sm transition">
+                            <i class="fa-solid fa-share-nodes"></i>
+                        </button>
+                    </div>
+                `;
+                card.querySelector('.note-title-btn').addEventListener('click', () => openPreviewByIndex(noteDataIndex));
+                card.querySelector('.note-read-btn').addEventListener('click', () => openPreviewByIndex(noteDataIndex));
+                card.querySelector('.note-share-btn').addEventListener('click', () => shareNote(note.shareid || note.ShareID || note.Shareid || note.id || noteDataIndex));
+                grid.appendChild(card);
+            });
+        }
+
+        function filterNotes() { renderNotes(); }
+
+        // ======================================================
+        // নোটিফিকেশন সিস্টেম: বেল ক্লিক না করা পর্যন্ত count দেখাবে
+        // ======================================================
+
+        // গুগল শিট থেকে আসা সব নোটিশের একটি unique key তৈরি করা
+        // (Title + Date মিলিয়ে, যাতে নতুন নোটিশ আসলে ধরা পড়ে)
+        function getNoticeKey(n) {
+            return (n.Title || '') + '__' + (n.Date || '');
+        }
+
+        // localStorage থেকে আগে যেসব নোটিশ দেখা হয়েছে সেগুলোর key আনা
+        function getSeenKeys() {
+            try {
+                return JSON.parse(localStorage.getItem('seenNoticeKeys') || '[]');
+            } catch(e) { return []; }
+        }
+
+        // বেল ক্লিক করলে বর্তমান সব নোটিশ "দেখা হয়েছে" হিসেবে সেভ করা
+        function markAllAsSeen() {
+            const keys = noticeData.map(n => getNoticeKey(n));
+            localStorage.setItem('seenNoticeKeys', JSON.stringify(keys));
+        }
+
+        function toggleNoticePanel() {
+            const panel = document.getElementById('noticePanel');
+            const isHidden = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+
+            // প্যানেল খোলার সময় সব নোটিশ "দেখা হয়েছে" মার্ক করা ও badge লুকানো
+            if (isHidden) {
+                markAllAsSeen();
+                const badge = document.getElementById('bellBadge');
+                badge.classList.add('hidden');
+                badge.innerText = '';
+                // নোটিশ লিস্ট রিফ্রেশ করা (লাল ডট সরানোর জন্য)
+                renderNoticeList(false);
+            }
+        }
+
+        // প্যানেলের বাইরে ক্লিক করলে বন্ধ হবে
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('noticePanel');
+            const bell = document.getElementById('bellBtn');
+            if (panel && !panel.classList.contains('hidden')) {
+                if (!panel.contains(e.target) && !bell.contains(e.target)) {
+                    panel.classList.add('hidden');
+                }
+            }
+        });
+
+        // শুধু নোটিশ লিস্ট HTML রেন্ডার করার ফাংশন
+        // showUnread = true মানে লাল ডট দেখাবে, false মানে সব ডট ধূসর
+        function renderNoticeList(showUnread) {
+            const list = document.getElementById('noticeList');
+            if (!list) return;
+
+            if (noticeData.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-400 text-sm py-6">কোনো নোটিশ নেই</p>';
+                return;
+            }
+
+            const seenKeys = getSeenKeys();
+            list.innerHTML = noticeData.map(n => {
+                const key = getNoticeKey(n);
+                const isUnseen = showUnread && !seenKeys.includes(key);
+                const dotColor = isUnseen ? 'bg-red-500' : 'bg-gray-200';
+                return `
+                <div class="px-4 py-3 hover:bg-purple-50 transition">
+                    <div class="flex items-start gap-2">
+                        <span class="mt-1 w-2 h-2 min-w-[8px] rounded-full ${dotColor} inline-block"></span>
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">${n.Title || ''}</p>
+                            <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">${n.Message || ''}</p>
+                            ${n.Date ? `<p class="text-[10px] text-purple-400 mt-1 font-medium"><i class="fa-regular fa-calendar mr-1"></i>${n.Date}</p>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // মূল renderNotices: badge count আপডেট করা + লিস্ট রেন্ডার করা
+        function renderNotices() {
+            const badge = document.getElementById('bellBadge');
+            if (!badge) return;
+
+            if (noticeData.length === 0) {
+                badge.classList.add('hidden');
+                renderNoticeList(false);
+                return;
+            }
+
+            // যেসব নোটিশ আগে দেখা হয়নি সেগুলো গোনা
+            const seenKeys = getSeenKeys();
+            const unseenCount = noticeData.filter(n => !seenKeys.includes(getNoticeKey(n))).length;
+
+            if (unseenCount > 0) {
+                badge.classList.remove('hidden');
+                badge.innerText = unseenCount > 9 ? '9+' : unseenCount;
+            } else {
+                badge.classList.add('hidden');
+                badge.innerText = '';
+            }
+
+            // লিস্টে লাল ডট দেখানো (প্যানেল বন্ধ থাকলেও প্রস্তুত রাখা)
+            renderNoticeList(true);
+        }
+
+        function openPreviewByIndex(idx) {
+            const note = notesData[idx];
+            if(!note) return;
+            _showModal(note);
+        }
+
+        function _showModal(note) {
+            document.getElementById('modalSubjectBadge').innerText = `${note.Subject} • ${note.PaperCode}`;
+            document.getElementById('modalTitle').innerText = note.Title;
+            document.getElementById('modalSemester').innerText = note.Semester;
+            document.getElementById('modalDate').innerText = note.date || '';
+            document.getElementById('modalPaperCode').innerText = note.PaperCode;
+
+            const pdfContainer = document.getElementById('pdfContainer');
+            const textContainer = document.getElementById('textContainer');
+            const pdfFrame = document.getElementById('modalPdfFrame');
+
+            if (note.Pdfurl && String(note.Pdfurl).trim() !== "") {
+                let embedUrl = note.Pdfurl;
+                if(embedUrl.includes("drive.google.com") && embedUrl.includes("/view")) {
+                    embedUrl = embedUrl.replace("/view", "/preview");
+                }
+                pdfFrame.src = embedUrl;
+                pdfContainer.classList.remove('hidden');
+                textContainer.classList.add('hidden');
+            } else {
+                document.getElementById('modalLongDesc').innerText = note.LongDescription || '';
+                pdfFrame.src = "";
+                pdfContainer.classList.add('hidden');
+                textContainer.classList.remove('hidden');
+            }
+
+            const shareId = note.shareid || note.ShareID || note.Shareid || note.id || '';
+            document.getElementById('modalShareBtn').onclick = () => shareNote(shareId);
+
+            const modal = document.getElementById('previewModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                modal.querySelector('.translate-y-full').classList.remove('translate-y-full');
+            }, 10);
+
+            history.pushState({ modalOpen: true }, "");
+        }
+
+        function openPreview(shareid) {
+            const note = notesData.find(n => {
+                const id = String(n.shareid || n.ShareID || n.Shareid || n.share_id || n.id || '').trim();
+                return id === String(shareid).trim();
+            });
+            if(!note) return;
+            _showModal(note);
+        }
+
+        function closePreview() {
+            const modal = document.getElementById('previewModal');
+            if (modal.classList.contains('hidden')) return;
+
+            modal.querySelector('.sm\\:max-w-3xl').classList.add('translate-y-full');
+            modal.classList.remove('opacity-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('modalPdfFrame').src = ""; 
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }, 300);
+        }
+
+        window.addEventListener("popstate", function (event) {
+            const modal = document.getElementById('previewModal');
+            if (!modal.classList.contains('hidden')) {
+                closePreview();
+            }
+        });
+
+        function shareNote(shareid) {
+            const shareUrl = `${window.location.origin}${window.location.pathname}?note=${shareid}`;
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert("নোটের কাস্টম শেয়ার লিংকটি কপি হয়েছে!");
+            }).catch(err => {
+                console.error("কপি করা যায়নি:", err);
+            });
+        }
+
+        function checkSharedLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const noteShareID = urlParams.get('note');
+            if(noteShareID) {
+                setTimeout(() => { openPreview(noteShareID); }, 200);
+            }
+        }
+    </script>
+</body>
+</html>
